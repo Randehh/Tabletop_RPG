@@ -87,7 +87,7 @@ namespace Rondo.DnD5E.Gameplay {
                 //UpdateWebcam();
 
                 if (Input.GetKeyDown(KeyCode.Space)) {
-                    SpawnDice(1, 1, 1, 1, 1, 1, (result) => { Debug.Log("Sum is " + result); });
+                    SpawnDice(0, 0, 0, 0, 0, 1, (result) => { Debug.Log("Sum is " + result); });
                 }
 
                 if (Input.GetKeyDown(KeyCode.D)) {

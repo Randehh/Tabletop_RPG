@@ -1,6 +1,7 @@
 ﻿using System;
 using Photon.Pun;
 using UnityEngine;
+using Rondo.DnD5E.Networking.Generic;
 
 namespace Rondo.DnD5E.Networking.PUNExtensions {
 
@@ -11,7 +12,9 @@ namespace Rondo.DnD5E.Networking.PUNExtensions {
 
         protected Rigidbody m_Body;
 
-        private float m_LastUpdateReceived;
+        private NVector3 m_Position = new NVector3(-5, 5, -4, 1, -5, 5, true);
+        private NVector3 m_Rotation = new NVector3(0, 360);
+
         private Vector3 m_TargetPosition;
         private Quaternion m_TargetRotation;
 
@@ -23,24 +26,38 @@ namespace Rondo.DnD5E.Networking.PUNExtensions {
             if (m_Body != null && !photonView.IsMine) {
                 m_Body.isKinematic = true;
             }
+
+            m_TargetPosition = transform.position;
+            m_TargetRotation = transform.localRotation;
         }
 
         protected virtual void Update() {
             if (photonView.IsMine) return;
 
-            float lerpValue = Time.deltaTime * 1;
+            float lerpValue = Time.deltaTime * 10;
             if (syncPosition) transform.position = Vector3.Lerp(transform.position, m_TargetPosition, lerpValue);
             if (syncRotation) transform.localRotation = Quaternion.Lerp(transform.localRotation, m_TargetRotation, lerpValue);
         }
 
         public void OnPhotonSerializeView(PhotonStream stream, PhotonMessageInfo info) {
             if (stream.IsWriting) {
-                if(syncPosition) stream.SendNext(transform.position);
-                if(syncRotation) stream.SendNext(transform.rotation.eulerAngles);
+                if (syncPosition) {
+                    m_Position.Value = transform.position;
+                    m_Position.Send(stream);
+                }
+                if (syncRotation) {
+                    m_Rotation.Value = transform.rotation.eulerAngles;
+                    m_Rotation.Send(stream);
+                }
             } else {
-                if(syncPosition) m_TargetPosition = (Vector3)stream.ReceiveNext();
-                if(syncRotation) m_TargetRotation = Quaternion.Euler((Vector3)stream.ReceiveNext());
-                m_LastUpdateReceived = Time.time;
+                if (syncPosition) {
+                    m_Position.Receive(stream);
+                    m_TargetPosition = m_Position.Value;
+                }
+                if (syncRotation) {
+                    m_Rotation.Receive(stream);
+                    m_TargetRotation = Quaternion.Euler(m_Rotation.Value);
+                }
             }
         }
     }
